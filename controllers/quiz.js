@@ -161,7 +161,7 @@ exports.randomplay = (req, res, next) => {
         req.session.randomplay = [];
     }
 
-    condition1 = {"id": {[Sequelize.Op.notIn]: req.session.randomplay} }; //condicion de eliminar los ID ya respondidos
+    var condition1 = {"id": {[Sequelize.Op.notIn]: req.session.randomplay} }; //condicion de eliminar los ID ya respondidos
     return models.quiz.count({where: condition1})
     .then(var1 => {
         if (var1 === 0){
@@ -170,7 +170,7 @@ exports.randomplay = (req, res, next) => {
             res.render('quizzes/random_nomore', {score: points});
         }
 
-        randomID = Math.floor(Math.random()*res);
+        randomID = Math.floor(Math.random()*var1);
         return models.quiz.findAll({where: condition1, limit: 1, offset: randomID}) //Devuelve un array de elementos (como elemento)
         .then(varquiz=> {
             return varquiz[0];
@@ -191,4 +191,16 @@ exports.randomcheck = (req, res, next) => {
 
     const {quiz, query} = req;
 
+    const answer = query.answer || "";
+    const result = answer.toLowerCase().trim() === quiz.answer.toLowerCase().trim();
+
+    if (result){
+        var quizID = quiz.id;
+        req.session.randomplay.push(quizID);  //metido la id respondida
+        var score = req.session.randomplay.length; 
+        res.render('quizzes/random_result', {score, result, answer});
+    } else {
+        var score = req.session.randomplay.length; 
+        res.render('quizzes/random_result', {score, result, answer});
+    }
 };
