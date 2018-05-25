@@ -153,3 +153,42 @@ exports.check = (req, res, next) => {
         answer
     });
 };
+
+// creamos las nuevas variables randomplay y randomcheck
+exports.randomplay = (req, res, next) => {
+
+    if(req.session.randomplay === undefined){       //Si no esta creado/definido, lo creamos 
+        req.session.randomplay = [];
+    }
+
+    condition1 = {"id": {[Sequelize.Op.notIn]: req.session.randomplay} }; //condicion de eliminar los ID ya respondidos
+    return models.quiz.count({where: condition1})
+    .then(var1 => {
+        if (var1 === 0){
+            var points = req.session.randomplay.length;
+            req.session.randomplay = [];
+            res.render('quizzes/random_nomore', {score: points});
+        }
+
+        randomID = Math.floor(Math.random()*res);
+        return models.quiz.findAll({where: condition1, limit: 1, offset: randomID}) //Devuelve un array de elementos (como elemento)
+        .then(varquiz=> {
+            return varquiz[0];
+        })
+
+    })
+    .then( var2 => {
+        var points = req.session.randomplay.length;
+        res.render('quizzes/random_play', {quiz: var2, score : points});
+    })
+    .catch(err => {
+        console.log(err);
+    })
+
+};
+
+exports.randomcheck = (req, res, next) => {
+
+    const {quiz, query} = req;
+
+};
