@@ -120,6 +120,9 @@ router.delete('/quizzes/:quizId(\\d+)',
 router.get('/quizzes/:quizId(\\d+)/play',  quizController.play);
 router.get('/quizzes/:quizId(\\d+)/check', quizController.check);
 
+//---
+router.get('/quizzes/randomplay', quizController.randomplay);
+router.get('/quizzes/randomcheck/:quizId(\\d+)',  quizController.randomcheck);  //Los 2 puntos es una variable y la barra barra el tipo de variable (el numero)
 
 
 router.post('/quizzes/:quizId(\\d+)/tips',

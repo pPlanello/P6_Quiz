@@ -8,9 +8,14 @@ const paginate = require('../helpers/paginate').paginate;
 exports.load = (req, res, next, quizId) => {
 
     models.quiz.findById(quizId, {
-        include: [
+        /*include: [
             models.tip,
             {model: models.user, as: 'author'}
+        ]*/
+        include: [
+            {model: models.user, as: 'author'},
+            {model: models.tip, 
+                include: [{model: models.user, as: 'author'}]}
         ]
     })
     .then(quiz => {
@@ -78,7 +83,7 @@ exports.index = (req, res, next) => {
         res.locals.paginate_control = paginate(count, items_per_page, pageno, req.url);
 
         const findOptions = {
-            ...countOptions,
+            countOptions,
             offset: items_per_page * (pageno - 1),
             limit: items_per_page,
             include: [{model: models.user, as: 'author'}]
@@ -224,4 +229,55 @@ exports.check = (req, res, next) => {
         result,
         answer
     });
+};
+
+// creamos las nuevas variables randomplay y randomcheck
+exports.randomplay = (req, res, next) => {
+
+    if(req.session.randomplay === undefined){       //Si no esta creado/definido, lo creamos 
+        req.session.randomplay = [];
+    }
+
+    var condition1 = {"id": {[Sequelize.Op.notIn]: req.session.randomplay} }; //condicion de eliminar los ID ya respondidos
+    return models.quiz.count({where: condition1})
+    .then(var1 => {
+        if (var1 === 0){
+            var points = req.session.randomplay.length;
+            req.session.randomplay = [];
+            res.render('quizzes/random_nomore', {score: points});
+        }
+
+        randomID = Math.floor(Math.random()*var1);
+        return models.quiz.findAll({where: condition1, limit: 1, offset: randomID}) //Devuelve un array de elementos (como elemento)
+        .then(varquiz=> {
+            return varquiz[0];
+        })
+
+    })
+    .then( var2 => {
+        var points = req.session.randomplay.length;
+        res.render('quizzes/random_play', {quiz: var2, score : points});
+    })
+    .catch(err => {
+        console.log(err);
+    })
+
+};
+
+exports.randomcheck = (req, res, next) => {
+
+    const {quiz, query} = req;
+
+    const answer = query.answer || "";
+    const result = answer.toLowerCase().trim() === quiz.answer.toLowerCase().trim();
+
+    if (result){
+        var quizID = quiz.id;
+        req.session.randomplay.push(quizID);  //metido la id respondida
+        var score = req.session.randomplay.length; 
+        res.render('quizzes/random_result', {score, result, answer});
+    } else {
+        var score = req.session.randomplay.length; 
+        res.render('quizzes/random_result', {score, result, answer});
+    }
 };
